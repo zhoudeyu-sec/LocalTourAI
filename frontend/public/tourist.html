@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>景区数字人导游 · 灵山小游</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(145deg, #f0f4f8 0%, #e2e8f0 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .guide-app {
+      max-width: 400px;
+      width: 100%;
+      background: white;
+      border-radius: 32px;
+      padding: 24px 18px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+     
+    /* 数字人头像 */
+    .avatar-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .avatar-wrapper {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      box-shadow: 0 8px 20px rgba(102,126,234,0.3);
+      overflow: hidden;
+    }
+    .avatar-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .avatar-name {
+      font-size: 20px;
+      font-weight: bold;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .avatar-badge {
+      background: #3b82f6;
+      color: white;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    
+    /* 选择按钮区域 */
+    .selector-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .style-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 30px;
+      background: white;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .style-btn.active {
+      border-color: #3b82f6;
+      background: #eef2ff;
+      color: #3b82f6;
+    }
+    
+    /* 聊天区域 */
+    .chat-history {
+      background: #f8fafc;
+      border-radius: 20px;
+      padding: 16px;
+      min-height: 350px;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+      border: 1px solid #e2e8f0;
+    }
+    .message {
+      margin-bottom: 14px;
+      display: flex;
+    }
+    .message.user { justify-content: flex-end; }
+    .message.ai { justify-content: flex-start; }
+    .message-content {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .user .message-content {
+      background: #3b82f6;
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .ai .message-content {
+      background: white;
+      color: #1e293b;
+      border: 1px solid #cbd5e1;
+      border-bottom-left-radius: 4px;
+    }
+    .empty-chat {
+      text-align: center;
+      color: #94a3b8;
+      padding: 50px 20px;
+    }
+    
+    /* 输入区域 */
+    .input-area {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 30px;
+      font-size: 15px;
+      outline: none;
+    }
+    .input-area input:focus {
+      border-color: #3b82f6;
+    }
+    .btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: none;
+      background: #eef2ff;
+      color: #3b82f6;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .btn:hover {
+      background: #3b82f6;
+      color: white;
+      transform: scale(1.05);
+    }
+    .btn:active {
+      transform: scale(0.95);
+    }
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+    .btn.recording {
+      background: #ef4444;
+      color: white;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .voice-status {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    /* 语音开关按钮 */
+    .speech-toggle {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 20px;
+      transition: all 0.2s;
+      color: #64748b;
+    }
+    .speech-toggle:hover {
+      background: #eef2ff;
+    }
+    .speech-toggle.active {
+      color: #3b82f6;
+      background: #eef2ff;
+    }
+
+    .controls-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+<div class="guide-app">
+  
+  <!-- 控制栏 -->
+  <div class="controls-row">
+    <button class="speech-toggle" id="speechToggle" title="语音播报开关">
+      <i class="fas fa-volume-up"></i>
+    </button>
+  </div>
+
+  <!-- 数字人选择按钮 -->
+  <div class="selector-row">
+    <button class="style-btn" data-style="ancient">🏯 古风导游</button>
+    <button class="style-btn" data-style="modern">💼 现代职业</button>
+    <button class="style-btn" data-style="cartoon">🎮 卡通3D</button>
+  </div>
+
+  <!-- 数字人 -->
+  <div class="avatar-section">
+    <div class="avatar-wrapper" id="avatarWrapper">
+      <img id="avatarImg" src="../../images/古风女导游（推荐灵山）.png" alt="数字人导游">
+    </div>
+    <div class="avatar-name">
+      <span id="avatarName">灵山小游</span>
+      <span class="avatar-badge" id="voiceBadge">温柔女声</span>
+    </div>
+  </div>
+
+  <!-- 聊天记录 -->
+  <div class="chat-history" id="chatContainer">
+    <div class="empty-chat">
+      <i class="fas fa-comment-dots" style="font-size: 32px; opacity: 0.3; margin-bottom: 8px; display: block;"></i>
+      和我聊聊吧～
+    </div>
+  </div>
+
+  <!-- 输入框 -->
+  <div class="input-area">
+    <input type="text" id="msgInput" placeholder="输入问题..." autocomplete="off">
+    <button class="btn" id="voiceBtn"><i class="fas fa-microphone"></i></button>
+    <button class="btn btn-primary" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+  </div>
+  
+  <div class="voice-status" id="voiceStatus"></div>
+</div>
+
+<script>
+  window.onload = function() {
+    
+    // 获取元素
+    const chatContainer = document.getElementById('chatContainer');
+    const msgInput = document.getElementById('msgInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const voiceBtn = document.getElementById('voiceBtn');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const avatarName = document.getElementById('avatarName');
+    const voiceBadge = document.getElementById('voiceBadge');
+    const speechToggle = document.getElementById('speechToggle');
+    const avatarImg = document.getElementById('avatarImg');
+    const styleBtns = document.querySelectorAll('.style-btn');
+
+    const API_BASE = 'http://localhost:8000/api/v1';
+    const userId = 'tourist_' + Date.now();
+    
+    // 语音播报开关状态
+    let speechEnabled = true;
+    let audioContext = null;
+
+    // 三种风格的配置
+    const styles = {
+      ancient: {
+        name: '古风导游',
+        voice: '温柔女声',
+        avatarImg: '../../images/古风女导游（推荐灵山）.png',
+        ttsStyle: 'ancient',
+        greeting: '小女子这厢有礼了~ 请问客官想去哪里游玩？'
+      },
+      modern: {
+        name: '现代职业',
+        voice: '沉稳男声',
+        avatarImg: '../../images/现代职业装.png',
+        ttsStyle: 'modern',
+        greeting: '您好，我是您的专业数字导游，请问有什么可以帮您？'
+      },
+      cartoon: {
+        name: '卡通3D',
+        voice: '活泼童声',
+        avatarImg: '../../images/卡通3D形象.png',
+        ttsStyle: 'cartoon',
+        greeting: '嗨~ 小朋友你好呀！想和我一起去冒险吗？'
+      }
+    };
+
+    let currentStyle = 'ancient';
+
+    // 切换风格
+    function switchStyle(styleKey) {
+      currentStyle = styleKey;
+      const style = styles[styleKey];
+      
+      avatarImg.src = style.avatarImg;
+      avatarName.textContent = style.name;
+      voiceBadge.textContent = style.voice;
+      
+      styleBtns.forEach(btn => {
+        if (btn.dataset.style === styleKey) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      
+      localStorage.setItem('selectedStyle', styleKey);
+    }
+
+    // 绑定风格按钮事件
+    styleBtns.forEach(btn => {
+      btn.onclick = () => {
+        switchStyle(btn.dataset.style);
+      };
+    });
+
+    // 播放音频（base64 格式）
+    function playAudioBase64(base64Audio) {
+      if (!base64Audio) return;
+      
+      try {
+        // 将 base64 转换为 Blob
+        const byteCharacters = atob(base64Audio);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'audio/mp3' });
+        const url = URL.createObjectURL(blob);
+        
+        const audio = new Audio();
+        audio.src = url;
+        audio.play().catch(e => console.log('播放失败:', e));
+        
+        // 清理 URL 对象
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+        };
+      } catch (e) {
+        console.error('音频播放错误:', e);
+      }
+    }
+
+    // TTS 语音播报（调用后端火山方舟）
+    async function speak(text) {
+      if (!speechEnabled) return;
+      if (!text || text.trim() === '') return;
+      
+      const style = styles[currentStyle].ttsStyle;
+      
+      try {
+        const response = await fetch(`${API_BASE}/tts/synthesize`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text, style: style })
+        });
+        
+        const data = await response.json();
+        
+        if (data.code === 200 && data.data && data.data.audio) {
+          playAudioBase64(data.data.audio);
+        } else {
+          // 降级：使用浏览器默认 TTS
+          fallbackSpeak(text);
+        }
+      } catch (error) {
+        console.error('TTS 请求失败:', error);
+        fallbackSpeak(text);
+      }
+    }
+
+    // 降级方案：浏览器自带 TTS
+    function fallbackSpeak(text) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN';
+      utterance.rate = 0.9;
+      utterance.pitch = currentStyle === 'cartoon' ? 1.3 : (currentStyle === 'ancient' ? 1.0 : 0.9);
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // 更新语音开关UI
+    function updateSpeechToggleUI() {
+      if (speechEnabled) {
+        speechToggle.classList.add('active');
+        speechToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
+        speechToggle.title = '语音播报已开启，点击关闭';
+      } else {
+        speechToggle.classList.remove('active');
+        speechToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
+        speechToggle.title = '语音播报已关闭，点击开启';
+      }
+    }
+
+    // 切换语音开关
+    speechToggle.onclick = function() {
+      speechEnabled = !speechEnabled;
+      updateSpeechToggleUI();
+      if (!speechEnabled) {
+        window.speechSynthesis.cancel();
+      }
+    };
+
+    // 加载配置
+    async function loadConfig() {
+      try {
+        const res = await fetch(`${API_BASE}/config`);
+        const data = await res.json();
+        if (data.code === 200 && data.data && !localStorage.getItem('selectedStyle')) {
+          const backendStyle = data.data.avatar_style;
+          if (backendStyle.includes('古风')) switchStyle('ancient');
+          else if (backendStyle.includes('现代')) switchStyle('modern');
+          else if (backendStyle.includes('卡通')) switchStyle('cartoon');
+          else switchStyle('ancient');
+        }
+      } catch(e) {
+        console.log('配置加载失败，使用默认值');
+      }
+    }
+
+    // 添加消息
+    function addMessage(text, type) {
+      const empty = chatContainer.querySelector('.empty-chat');
+      if (empty) empty.remove();
+      
+      const div = document.createElement('div');
+      div.className = `message ${type}`;
+      div.innerHTML = `<div class="message-content">${escapeHtml(text)}</div>`;
+      chatContainer.appendChild(div);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // 转义HTML
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 发送消息
+    async function sendMessage(question) {
+      if (!question.trim()) return;
+      
+      addMessage(question, 'user');
+      msgInput.value = '';
+      
+      addMessage('正在思考...', 'ai');
+      sendBtn.disabled = true;
+      sendBtn.style.opacity = '0.5';
+
+      try {
+        const res = await fetch(`${API_BASE}/chat/ask`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, question: question.trim() })
+        });
+        
+        const data = await res.json();
+        
+        const lastMsg = chatContainer.lastChild;
+        if (lastMsg) lastMsg.remove();
+        
+        if (data.code === 200 && data.data) {
+          const answer = data.data.answer;
+          addMessage(answer, 'ai');
+          speak(answer);
+        } else {
+          addMessage('收到消息啦！', 'ai');
+        }
+      } catch(e) {
+        const lastMsg = chatContainer.lastChild;
+        if (lastMsg) lastMsg.remove();
+        addMessage('网络错误，请确保后端已启动', 'ai');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.style.opacity = '1';
+      }
+    }
+
+    // 语音识别
+    function initVoice() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        voiceStatus.textContent = '浏览器不支持语音';
+        voiceBtn.disabled = true;
+        return;
+      }
+      
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'zh-CN';
+      recognition.continuous = false;
+      
+      let isRecording = false;
+      
+      voiceBtn.onclick = function() {
+        if (isRecording) {
+          recognition.stop();
+        } else {
+          recognition.start();
+        }
+      };
+      
+      recognition.onstart = function() {
+        isRecording = true;
+        voiceBtn.classList.add('recording');
+        voiceStatus.textContent = '🎤 聆听中...';
+      };
+      
+      recognition.onend = function() {
+        isRecording = false;
+        voiceBtn.classList.remove('recording');
+        voiceStatus.textContent = '';
+      };
+      
+      recognition.onresult = function(event) {
+        const text = event.results[0][0].transcript;
+        msgInput.value = text;
+        voiceStatus.textContent = '识别: ' + text;
+        setTimeout(() => voiceStatus.textContent = '', 2000);
+        sendMessage(text);
+      };
+      
+      recognition.onerror = function() {
+        isRecording = false;
+        voiceBtn.classList.remove('recording');
+        voiceStatus.textContent = '识别失败';
+      };
+    }
+
+    // 绑定事件
+    sendBtn.onclick = function() {
+      sendMessage(msgInput.value);
+    };
+    
+    msgInput.onkeypress = function(e) {
+      if (e.key === 'Enter') {
+        sendMessage(msgInput.value);
+      }
+    };
+
+    // 初始化
+    const savedStyle = localStorage.getItem('selectedStyle');
+    if (savedStyle && styles[savedStyle]) {
+      switchStyle(savedStyle);
+    } else {
+      switchStyle('ancient');
+    }
+    
+    loadConfig();
+    initVoice();
+    updateSpeechToggleUI();
+  };
+</script>
+</body>
+</html>
