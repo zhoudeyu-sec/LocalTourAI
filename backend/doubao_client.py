@@ -2,10 +2,7 @@ import httpx
 import logging
 import os
 
-# 硬编码配置（绕过 dotenv bug）
-os.environ["DOUBAO_API_KEY"] = "ark-a60fa04d-1691-4a3f-ac7e-dfba18d4a641-4a661"
-os.environ["DOUBAO_ENDPOINT_ID"] = "ep-m-20260517004545-vwkx7"
-os.environ["DOUBAO_BASE_URL"] = "https://ark.cn-beijing.volces.com/api/v3"
+
 
 logger = logging.getLogger(__name__)
 
